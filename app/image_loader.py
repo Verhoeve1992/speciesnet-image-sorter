@@ -8,6 +8,10 @@ from PyQt6.QtCore import Qt, QSize
 def load_image(file_path, image_label):
     """Load and display the image in the label."""
     image = QPixmap(file_path)
+    if image.isNull():
+        image_label.clear()
+        return
+
     scaled_image = image.scaled(
         image_label.size(),
         Qt.AspectRatioMode.KeepAspectRatio,
@@ -32,12 +36,12 @@ def load_folder_images(folder_path, file_list):
     
     for media_path in media_files:
         item = QListWidgetItem()
-        # Try to create thumbnail, use file icon for videos if thumbnail fails
-        try:
-            icon = QIcon(create_thumbnail(media_path))
-        except Exception:
-            # For videos, we'll use a generic icon since thumbnail_creator may not support video
+        # Only generate pixmap thumbnails for still images.
+        if os.path.splitext(media_path)[1].lower() in VIDEO_EXTS:
             icon = QIcon()
+        else:
+            thumbnail = create_thumbnail(media_path)
+            icon = QIcon(thumbnail)
         
         item.setIcon(icon)
         basename = os.path.basename(media_path)

@@ -82,10 +82,14 @@ class SpeciesnetWidget(QWidget):
         
         # Collect all image files (both original and extracted from videos)
         image_files = list(glob(os.path.join(folder, "*.JPG")))
+        image_files.extend(glob(os.path.join(folder, "*.jpg")))
         
         # Add extracted frames from videos
         for frame_folder in extracted_frame_folders:
             image_files.extend(glob(os.path.join(frame_folder, "*.jpg")))
+        
+        # Remove duplicates while preserving order
+        image_files = list(dict.fromkeys(image_files))
         
         if not image_files:
             QMessageBox.warning(
@@ -97,7 +101,7 @@ class SpeciesnetWidget(QWidget):
             return
 
         predictions_json = os.path.join(folder, "predictions.json")
-        image_files_str = ",".join(image_files)
+        filepaths_txt = os.path.join(folder, "speciesnet_filepaths.txt")
 
         # Stop any existing worker first
         if self.worker and self.worker.isRunning():
@@ -108,11 +112,15 @@ class SpeciesnetWidget(QWidget):
             self.worker = None
 
         try:
+            # Writing file paths to a text file avoids Windows command-line length limits.
+            with open(filepaths_txt, "w", encoding="utf-8") as f:
+                f.write("\n".join(image_files))
+
             cmd = [
                 sys.executable, "-m", "speciesnet.scripts.run_model",
-                "--filepaths", image_files_str,
+                "--filepaths_txt", filepaths_txt,
                 "--predictions_json", predictions_json,
-                "country", "NL"
+                "--country", "NLD"
             ]
             
             # Create and start worker thread
@@ -130,12 +138,6 @@ class SpeciesnetWidget(QWidget):
             total_files = len(image_files)
             self.logger.info(f"SpeciesNet process started for: {folder}")
             self.logger.info(f"Processing {total_files} images (including video frames)")
-            
-        except Exception as e:
-            error_msg = f"Failed to start SpeciesNet: {str(e)}"
-            QMessageBox.critical(self, "SpeciesNet Error", error_msg)
-            self.logger.error(error_msg)
-            self.logger.info(f"SpeciesNet process started for: {folder}")
             
         except Exception as e:
             error_msg = f"Failed to start SpeciesNet: {str(e)}"
