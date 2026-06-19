@@ -5,6 +5,7 @@ from .thumbnail_creator import create_thumbnail
 from .video_utils import VIDEO_EXTENSIONS as VIDEO_EXTS
 from PyQt6.QtCore import Qt, QSize
 
+
 def load_image(file_path, image_label):
     """Load and display the image in the label."""
     image = QPixmap(file_path)
@@ -15,9 +16,10 @@ def load_image(file_path, image_label):
     scaled_image = image.scaled(
         image_label.size(),
         Qt.AspectRatioMode.KeepAspectRatio,
-        Qt.TransformationMode.SmoothTransformation
+        Qt.TransformationMode.SmoothTransformation,
     )
     image_label.setPixmap(scaled_image)
+
 
 def load_folder_images(folder_path, file_list):
     """Load all image and video files from the specified folder."""
