@@ -5,6 +5,9 @@ from PyQt6.QtCore import Qt
 def create_thumbnail(image_path):
     """Create a thumbnail for the image."""
     pixmap = QPixmap(image_path)
+    if pixmap.isNull():
+        return QPixmap()
+
     scaled_pixmap = pixmap.scaled(
         64,
         64,
