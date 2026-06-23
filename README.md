@@ -1,5 +1,5 @@
 # SpeciesNetImageSorter
-SpeciesNet and Megadetector application to easily identify species on wildlife photos and sort them in folders using key presses.
+SpeciesNet and Megadetector application to easily identify species on wildlife photos and videos (See section Video Support) and sort them in folders using key presses.
 
 This application is used to easily view through all images in a folder and to sort them one by one using key presses to new folders.
 
@@ -51,3 +51,13 @@ The downloaded models can then be used for the detection and interference tasks.
   if you have a NVIDIA GPU you can benefit from CUDA
 
 
+## Video support
+Video support is still in test phase. Videos are chopped into individual frames as PNG files, which are subsequently treated with speciesnet. To apply the detection on videos, use the folder containing video files as input instead folder containing images. 
+The output of the videos are the individual frame images with a bounding box.
+For videos, it is recommended to not use large/long video files, since this will otherwise create too many images since each frame equals 1 image. A maximum number of frames is still WIP. 
+The model has not been elaborately tested for images and videos in combination together. 
+
+
+## Errors and Issues
+For errors and issues, please create an issue on the issue page. 
+I will look at it and address it when i have time. 
