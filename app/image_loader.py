@@ -23,19 +23,19 @@ def load_image(file_path, image_label):
 
 def load_folder_images(folder_path, file_list):
     """Load all image and video files from the specified folder."""
-    image_extensions = ('.png', '.jpg', '.jpeg', '.bmp', '.gif')
+    image_extensions = (".png", ".jpg", ".jpeg", ".bmp", ".gif")
     file_list.clear()
-    
+
     # Combine image and video extensions
     all_extensions = image_extensions + VIDEO_EXTS
-    
+
     media_files = [
         os.path.join(folder_path, f)
         for f in os.listdir(folder_path)
         if os.path.splitext(f)[1].lower() in all_extensions
     ]
     media_files.sort()
-    
+
     for media_path in media_files:
         item = QListWidgetItem()
         # Only generate pixmap thumbnails for still images.
@@ -44,7 +44,7 @@ def load_folder_images(folder_path, file_list):
         else:
             thumbnail = create_thumbnail(media_path)
             icon = QIcon(thumbnail)
-        
+
         item.setIcon(icon)
         basename = os.path.basename(media_path)
         # Add [VIDEO] marker for video files
@@ -54,5 +54,5 @@ def load_folder_images(folder_path, file_list):
             item.setText(basename)
         item.setData(Qt.ItemDataRole.UserRole, media_path)
         file_list.addItem(item)
-    
+
     return media_files
