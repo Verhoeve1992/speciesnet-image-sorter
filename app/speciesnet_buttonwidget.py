@@ -13,7 +13,6 @@ import logging
 from glob import glob
 from .worker import SpeciesnetWorker
 from .video_utils import get_video_files, extract_frames
-import time
 
 class SpeciesnetWidget(QWidget):
     """Widget that places a 'Run SpeciesNet' button at the left-bottom corner.

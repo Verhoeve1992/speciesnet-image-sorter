@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import QListWidgetItem
 from PyQt6.QtGui import QIcon, QPixmap
 from .thumbnail_creator import create_thumbnail
 from .video_utils import VIDEO_EXTENSIONS as VIDEO_EXTS
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtCore import Qt
 
 
 def load_image(file_path, image_label):
