@@ -1,4 +1,11 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QTabWidget, QPushButton, QHBoxLayout, QMessageBox
+from PyQt6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QFileDialog,
+    QPushButton,
+    QHBoxLayout,
+    QMessageBox,
+)
 from PyQt6.QtCore import Qt
 import os
 import sys
@@ -14,13 +21,14 @@ class SpeciesnetWidget(QWidget):
     or asks the user to choose a folder if none is open.
     Supports both image and video files - extracts frames from videos before processing.
     """
+
     def __init__(self, name):
         super().__init__()
         self.folder_path = ""
         self.folder_name = name
         self.worker = None
         self.logger = logging.getLogger("ImageViewer")
-        
+
         # Main vertical layout: stretch, then a horizontal layout containing button on the left
         vlayout = QVBoxLayout()
         vlayout.addStretch()  # push button row to the bottom
@@ -73,7 +81,9 @@ class SpeciesnetWidget(QWidget):
             folder = window.current_folder
 
         if not folder:
-            folder = QFileDialog.getExistingDirectory(self, "Select folder to run SpeciesNet on")
+            folder = QFileDialog.getExistingDirectory(
+                self, "Select folder to run SpeciesNet on"
+            )
             if not folder:
                 return
 
@@ -82,10 +92,14 @@ class SpeciesnetWidget(QWidget):
         
         # Collect all image files (both original and extracted from videos)
         image_files = list(glob(os.path.join(folder, "*.JPG")))
+        image_files.extend(glob(os.path.join(folder, "*.jpg")))
         
         # Add extracted frames from videos
         for frame_folder in extracted_frame_folders:
             image_files.extend(glob(os.path.join(frame_folder, "*.jpg")))
+        
+        # Remove duplicates while preserving order
+        image_files = list(dict.fromkeys(image_files))
         
         if not image_files:
             QMessageBox.warning(
@@ -97,7 +111,7 @@ class SpeciesnetWidget(QWidget):
             return
 
         predictions_json = os.path.join(folder, "predictions.json")
-        image_files_str = ",".join(image_files)
+        filepaths_txt = os.path.join(folder, "speciesnet_filepaths.txt")
 
         # Stop any existing worker first
         if self.worker and self.worker.isRunning():
@@ -108,24 +122,34 @@ class SpeciesnetWidget(QWidget):
             self.worker = None
 
         try:
+            # Writing file paths to a text file avoids Windows command-line length limits.
+            with open(filepaths_txt, "w", encoding="utf-8") as f:
+                f.write("\n".join(image_files))
+
             cmd = [
                 sys.executable, "-m", "speciesnet.scripts.run_model",
-                "--filepaths", image_files_str,
+                "--filepaths_txt", filepaths_txt,
                 "--predictions_json", predictions_json,
-                "country", "NL"
+                "--country", "NLD"
             ]
-            
+
             # Create and start worker thread
             self.worker = SpeciesnetWorker(cmd, folder)
             # Set parent to ensure proper cleanup
             self.worker.setParent(self)
-            self.worker.output_signal.connect(self.on_output, Qt.ConnectionType.QueuedConnection)
-            self.worker.error_signal.connect(self.on_error, Qt.ConnectionType.QueuedConnection)
-            self.worker.finished_signal.connect(self.on_finished, Qt.ConnectionType.QueuedConnection)
+            self.worker.output_signal.connect(
+                self.on_output, Qt.ConnectionType.QueuedConnection
+            )
+            self.worker.error_signal.connect(
+                self.on_error, Qt.ConnectionType.QueuedConnection
+            )
+            self.worker.finished_signal.connect(
+                self.on_finished, Qt.ConnectionType.QueuedConnection
+            )
             # Don't delete the worker - keep it alive to prevent segfaults
             # Qt will clean it up when the parent widget is destroyed
             self.worker.start()
-            
+
             self.run_button.setEnabled(False)
             total_files = len(image_files)
             self.logger.info(f"SpeciesNet process started for: {folder}")
@@ -135,27 +159,30 @@ class SpeciesnetWidget(QWidget):
             error_msg = f"Failed to start SpeciesNet: {str(e)}"
             QMessageBox.critical(self, "SpeciesNet Error", error_msg)
             self.logger.error(error_msg)
-            self.logger.info(f"SpeciesNet process started for: {folder}")
-            
-        except Exception as e:
-            error_msg = f"Failed to start SpeciesNet: {str(e)}"
-            QMessageBox.critical(self, "SpeciesNet Error", error_msg)
-            self.logger.error(error_msg)
-    
+
     def on_output(self, message):
         """Handle output from SpeciesNet process."""
         pass  # Already logged in the worker thread
-    
+
     def on_error(self, message):
         """Handle errors from SpeciesNet process."""
         pass  # Already logged in the worker thread
-    
+
     def on_finished(self):
         """Handle completion of SpeciesNet process."""
         try:
             if self.run_button and not self.run_button.isHidden():
                 self.run_button.setEnabled(True)
             self.logger.info("SpeciesNet process finished")
+
+            # Load images from the processed folder
+            window = self.window()
+            if window and hasattr(window, "load_folder_images") and self.worker:
+                folder = self.worker.folder
+                if folder:
+                    window.current_folder = folder
+                    window.load_folder_images()
+                    self.logger.info(f"Loaded images from processed folder: {folder}")
         except RuntimeError as e:
             # Widget was deleted
             self.logger.debug(f"Widget deleted during on_finished: {e}")
